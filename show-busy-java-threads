@@ -188,6 +188,7 @@ fi
 readonly uuid="${PROG}_`date +%s`_${RANDOM}_$$"
 readonly store_dir="/tmp/${uuid}"
 mkdir -p "$store_dir"
+readonly jstack_file_path_prefix="$store_dir/jstack_"
 
 cleanupWhenExit() {
     rm -rf "$store_dir" &> /dev/null
@@ -205,7 +206,7 @@ printStackOfThreads() {
         local user="${line[3]}"
 
         ((idx++))
-        local jstackFile="$store_dir/${pid}"
+        local jstackFile="$jstack_file_path_prefix${pid}"
         [ -f "${jstackFile}" ] || {
             if [ "${user}" == "${USER}" ]; then
                 # run without sudo, when java process user is current user
@@ -243,6 +244,9 @@ printStackOfThreads() {
         fi
         sed "$sed_script" -n ${jstackFile} | tee ${append_file:+-a "$append_file"}
     done
+
+    # rm stack files, so as to re-jstack at next update
+    rm "$jstack_file_path_prefix"* &> /dev/null
 }
 
 headInfo() {
